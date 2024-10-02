@@ -1,42 +1,67 @@
 #include <templatebot/templatebot.h>
+#include <iomanip>
 #include <sstream>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <ogg/ogg.h>
+#include <opus/opusfile.h>
 
-/* When you invite the bot, be sure to invite it with the
- * scopes 'bot' and 'applications.commands', e.g.
- * https://discord.com/oauth2/authorize?client_id=940762342495518720&scope=bot+applications.commands&permissions=139586816064
- */
+using json = nhlomann::json;
 
-using json = nlohmann::json;
-
-int main(int argc, char const *argv[])
+int main(int argc, char const** argv)
 {
+    /* Загрузка OGG файла в память
+    *  Бот ожидет пакеты формата opus 2 channel stereom 48000Hz
+    * 
+    *  Можно использовать ffmpeg для кодировки аудио в ogg opus:
+    *  ffmpeg -i /путь/к/файлу -c:a libopus -ar 48000 -ac 2 -vn -b:a 96K /путь/к/opus.ogg
+    */
+    
+    //Загрузить токен Discord
     json configdocument;
     std::ifstream configfile("../config.json");
-    configfile >> configdocument;
-
-    /* Setup the bot */
+    
     dpp::cluster bot(configdocument["token"]);
-
-    /* Output simple log messages to stdout */
+    
     bot.on_log(dpp::utility::cout_logger());
-
-    /* Handle slash command */
-    bot.on_slashcommand([](const dpp::slashcommand_t& event) {
-         if (event.command.get_command_name() == "ping") {
-            event.reply("Pong!");
+    
+    bot.on_slashcommand([&bot](const dpp::slashcommand_t& event))
+    {
+        if(event.get_command.name() == "join")
+        {
+            dpp::guild* g = dpp::find_guild(event.command.guild_id);
+            //Пробуем подключиться к голосовому каналу, возвращет false 
+            //если не удаётся подключиться
+            if(!g->connect_member_voice(event.command.get_issuing_user()))
+            {
+                event.reply("Зайди в голосовой канал!");
+                return;
+            }
+            event.reply("Зашёл в канал!");
         }
-    });
-
-    /* Register slash command here in on_ready */
-    bot.on_ready([&bot](const dpp::ready_t& event) {
-        /* Wrap command registration in run_once to make sure it doesnt run on every full reconnection */
-        if (dpp::run_once<struct register_bot_commands>()) {
-            bot.global_command_create(dpp::slashcommand("ping", "Ping pong!", bot.me.id));
+        else if (event.command.get_command_name() == "play")
+        {
+            //Неправильный канал или проблемы с подключением - говорим пользователю
+            if(!v || !v->voiceclient || !v->voiceclient->is_ready())
+            {
+                event.reply("Проблемы с получением голосового канала. Убедись что я в голосовом канале!");
+                return;
+            }
+            ogg_sync_state oy; 
+            ogg_stream_state os;
+            ogg_page og;
+	    ogg_packet op;
+	    OpusHead header;
+	    char *buffer;
+	        
+	    FILE *fd;
+	        
+            //скачать видео с ютуба через yt-dlp
+            //перевести его в формат ogg через ffmpeg
+            //сделать многопоточную очередь + класс-обёртку для типа музыки
+            //(опционально, с ют будет всё переводиться в OGG)
+            
         }
-    });
-
-    /* Start the bot */
-    bot.start(dpp::st_wait);
-
-    return 0;
+    }
 }
