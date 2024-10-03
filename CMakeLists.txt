@@ -12,7 +12,7 @@ string(ASCII 27 Esc)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 set_target_properties(${BOT_NAME} PROPERTIES
-    CXX_STANDARD 17
+    CXX_STANDARD 20
     CXX_STANDARD_REQUIRED ON
 )
 
@@ -37,6 +37,7 @@ endif()
 target_include_directories(${BOT_NAME} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${OPENSSL_INCLUDE_DIR}
+    "/usr/local/include/opus"
 )
 
 target_link_libraries(${BOT_NAME}
@@ -44,6 +45,9 @@ target_link_libraries(${BOT_NAME}
     ${CMAKE_THREAD_LIBS_INIT}
     ${OPENSSL_CRYPTO_LIBRARY} 
     ${OPENSSL_SSL_LIBRARY}
+    "/usr/lib64/libopus.so.0"
+    "/usr/lib64/libopusfile.so.0"
+    "/usr/lib64/libogg.so.0"
 )
 
 if (DPP_FOUND)
